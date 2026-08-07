@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Password Strength Analyzer</title>
+    <meta
+      name="description"
+      content="Check how strong your password is with an instant score out of 100, a strength meter and improvement tips."
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <main class="wrapper">
+      <section class="card">
+        <header class="card-head">
+          <h1>Password Strength Analyzer</h1>
+          <p>Test your password against five security rules and get an instant score.</p>
+        </header>
+
+        <!-- Password input + show/hide toggle -->
+        <div class="field">
+          <input
+            type="password"
+            id="password"
+            placeholder="Enter your password"
+            autocomplete="new-password"
+          />
+          <button type="button" id="toggle" class="toggle" aria-label="Show password">Show</button>
+        </div>
+
+        <button type="button" id="analyze" class="btn">Analyze Password</button>
+
+        <!-- Results (hidden until analysis runs) -->
+        <div id="results" class="results hidden">
+          <div class="meter-row">
+            <span id="strength" class="strength">Weak</span>
+            <span id="score" class="score">0 / 100</span>
+          </div>
+          <div class="meter">
+            <div id="bar" class="bar"></div>
+          </div>
+
+          <ul id="checklist" class="checklist"></ul>
+
+          <div class="tips">
+            <h2>Suggestions</h2>
+            <ul id="suggestions"></ul>
+          </div>
+        </div>
+
+        <p id="error" class="error hidden"></p>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>

@@ -1,0 +1,251 @@
+/* ---------- Design tokens (dark theme) ---------- */
+:root {
+  --bg: #0b1020;
+  --bg-glow: #131a33;
+  --card: #141a2e;
+  --card-border: #232b45;
+  --text: #e8ecf8;
+  --muted: #98a2c0;
+  --accent: #4ade80;
+  --weak: #f87171;
+  --medium: #fbbf24;
+  --strong: #4ade80;
+  --radius: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at 20% 0%, var(--bg-glow), var(--bg) 60%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.wrapper {
+  width: 100%;
+  max-width: 560px;
+}
+
+/* ---------- Card ---------- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  animation: rise 0.5s ease-out;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-head h1 {
+  margin: 0 0 8px;
+  font-size: 1.6rem;
+}
+
+.card-head p {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* ---------- Input ---------- */
+.field {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.field input {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  background: #0f1426;
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
+}
+
+.toggle {
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  background: #0f1426;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.toggle:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* ---------- Button ---------- */
+.btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #04140a;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.2s;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* ---------- Results ---------- */
+.results {
+  margin-top: 26px;
+  animation: rise 0.35s ease-out;
+}
+
+.hidden {
+  display: none;
+}
+
+.meter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.strength {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.score {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.meter {
+  height: 10px;
+  border-radius: 999px;
+  background: #0f1426;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--weak);
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.4s;
+}
+
+/* ---------- Checklist ---------- */
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 22px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.checklist li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.checklist li.pass {
+  color: var(--text);
+}
+
+.checklist .mark {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--weak);
+}
+
+.checklist li.pass .mark {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--strong);
+}
+
+/* ---------- Suggestions ---------- */
+.tips {
+  margin-top: 22px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #0f1426;
+  border: 1px solid var(--card-border);
+}
+
+.tips h2 {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tips ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text);
+  font-size: 0.92rem;
+  display: grid;
+  gap: 6px;
+}
+
+.error {
+  margin-top: 16px;
+  color: var(--weak);
+  font-size: 0.9rem;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 480px) {
+  .card {
+    padding: 24px 18px;
+  }
+  .card-head h1 {
+    font-size: 1.35rem;
+  }
+}
