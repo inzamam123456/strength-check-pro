@@ -1,14 +1,22 @@
 /**
- * Password scoring logic — mirrors the Flask backend in
- * Password-Strength-Analyzer/app.py so the live preview behaves identically.
+ * Password scoring engine.
  *
- * Each of the five rules is worth 20 points (total 100).
+ * Score (0-100) blends four signals:
+ *   - Length score        (max 30)
+ *   - Character diversity (max 25)
+ *   - Entropy             (max 45)
+ *   - Pattern penalties   (subtracted)
+ *
+ * Mirrors Password-Strength-Analyzer/password_checker.py.
  */
 
+import { calculateEntropy, entropyLabel, estimateCrackTime, type EntropyLabel } from "./entropy";
+import { detectWeaknesses, type Weakness } from "./password-patterns";
+
 export const MIN_LENGTH = 8;
-const POINTS_PER_RULE = 20;
 
 export type RuleKey = "length" | "uppercase" | "lowercase" | "number" | "special";
+export type Strength = "Weak" | "Medium" | "Good" | "Strong";
 
 export interface Check {
   key: RuleKey;
@@ -18,10 +26,15 @@ export interface Check {
 
 export interface Analysis {
   score: number;
-  strength: "Weak" | "Medium" | "Strong";
+  strength: Strength;
+  entropy: number;
+  entropyLabel: EntropyLabel;
+  crackTime: string;
   checks: Check[];
   missing: string[];
+  warnings: string[];
   suggestions: string[];
+  analyzedAt: string;
 }
 
 const RULES: {
@@ -33,25 +46,25 @@ const RULES: {
   {
     key: "length",
     label: `Minimum ${MIN_LENGTH} characters`,
-    suggestion: `Make your password at least ${MIN_LENGTH} characters long.`,
+    suggestion: `Increase password length to at least ${MIN_LENGTH} characters.`,
     test: (pw) => pw.length >= MIN_LENGTH,
   },
   {
     key: "uppercase",
     label: "Uppercase letter (A-Z)",
-    suggestion: "Add at least one uppercase letter.",
+    suggestion: "Add uppercase letters.",
     test: (pw) => /[A-Z]/.test(pw),
   },
   {
     key: "lowercase",
     label: "Lowercase letter (a-z)",
-    suggestion: "Add at least one lowercase letter.",
+    suggestion: "Add lowercase letters.",
     test: (pw) => /[a-z]/.test(pw),
   },
   {
     key: "number",
     label: "Number (0-9)",
-    suggestion: "Add at least one number.",
+    suggestion: "Add numbers.",
     test: (pw) => /[0-9]/.test(pw),
   },
   {
@@ -62,6 +75,31 @@ const RULES: {
   },
 ];
 
+/** Length contributes up to 30 points, saturating around 20 characters. */
+function lengthScore(length: number): number {
+  if (length === 0) return 0;
+  return Math.min(30, Math.round((length / 20) * 30));
+}
+
+/** Diversity: 25 points shared across the four character families. */
+function diversityScore(checks: Check[]): number {
+  const families = checks.filter((c) => c.key !== "length" && c.passed).length;
+  return Math.round((families / 4) * 25);
+}
+
+/** Entropy contributes up to 45 points, saturating at 80 bits. */
+function entropyScore(bits: number): number {
+  return Math.min(45, Math.round((bits / 80) * 45));
+}
+
+function toStrength(score: number): Strength {
+  if (score <= 39) return "Weak";
+  if (score <= 59) return "Medium";
+  if (score <= 79) return "Good";
+  return "Strong";
+}
+
+/** Analyze a password and return a full report. */
 export function analyzePassword(password: string): Analysis {
   const checks: Check[] = RULES.map((rule) => ({
     key: rule.key,
@@ -69,21 +107,38 @@ export function analyzePassword(password: string): Analysis {
     passed: rule.test(password),
   }));
 
-  const score = checks.filter((c) => c.passed).length * POINTS_PER_RULE;
-  const strength = score <= 40 ? "Weak" : score <= 80 ? "Medium" : "Strong";
+  const entropy = calculateEntropy(password);
+  const weaknesses: Weakness[] = detectWeaknesses(password);
+  const penalty = weaknesses.reduce((total, weakness) => total + weakness.penalty, 0);
 
-  const failed = RULES.filter((rule) => !rule.test(password));
-  const suggestions = failed.map((rule) => rule.suggestion);
+  const raw = lengthScore(password.length) + diversityScore(checks) + entropyScore(entropy);
+  const score = Math.max(0, Math.min(100, raw - penalty));
 
+  const failedRules = RULES.filter((rule) => !rule.test(password));
+
+  // Relevant suggestions only: unmet rules first, then pattern fixes.
+  const suggestions = [
+    ...failedRules.map((rule) => rule.suggestion),
+    ...weaknesses.map((weakness) => weakness.suggestion),
+  ];
+
+  if (password.length > 0 && password.length < 12) {
+    suggestions.push("Use 12+ characters — length matters more than complexity.");
+  }
   if (suggestions.length === 0) {
-    suggestions.push("Great job! Consider using a passphrase of 16+ characters.");
+    suggestions.push("Excellent password. Store it in a password manager and never reuse it.");
   }
 
   return {
     score,
-    strength,
+    strength: toStrength(score),
+    entropy,
+    entropyLabel: entropyLabel(entropy),
+    crackTime: estimateCrackTime(entropy),
     checks,
-    missing: failed.map((rule) => rule.label),
-    suggestions,
+    missing: failedRules.map((rule) => rule.label),
+    warnings: weaknesses.map((weakness) => weakness.message),
+    suggestions: [...new Set(suggestions)],
+    analyzedAt: new Date().toISOString(),
   };
 }
