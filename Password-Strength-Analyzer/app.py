@@ -1,79 +1,39 @@
 """
-Password Strength Analyzer - Flask backend.
+Password Strength Analyzer — Flask application.
+
+Routes:
+    GET  /          -> homepage
+    POST /analyze   -> analyze a password
+    POST /generate  -> generate a secure password
+    GET  /health    -> health check for Render
 
 Run locally:
     pip install -r requirements.txt
     python app.py
 
-Production (Render):
+Production:
     gunicorn app:app
 """
 
+from __future__ import annotations
+
+import logging
 import os
-import re
 
 from flask import Flask, jsonify, render_template, request
 
+from generator import MAX_GENERATED_LENGTH, MIN_GENERATED_LENGTH, generate_password
+from password_checker import analyze_password
+from utils import json_error, validate_password
+
+logging.basicConfig(level=logging.INFO)
+
 app = Flask(__name__)
 
-# Each satisfied rule is worth 20 points (5 rules x 20 = 100).
-POINTS_PER_RULE = 20
-MIN_LENGTH = 8
-
-
-def analyze_password(password: str) -> dict:
-    """Analyze a password and return score, strength, missing rules and tips."""
-
-    # Each check maps a rule key to whether the password satisfies it.
-    checks = {
-        "length": len(password) >= MIN_LENGTH,
-        "uppercase": bool(re.search(r"[A-Z]", password)),
-        "lowercase": bool(re.search(r"[a-z]", password)),
-        "number": bool(re.search(r"[0-9]", password)),
-        "special": bool(re.search(r"[^A-Za-z0-9]", password)),
-    }
-
-    # Human readable labels used for the checklist / missing requirements.
-    labels = {
-        "length": f"Minimum {MIN_LENGTH} characters",
-        "uppercase": "Uppercase letter (A-Z)",
-        "lowercase": "Lowercase letter (a-z)",
-        "number": "Number (0-9)",
-        "special": "Special character (!@#$...)",
-    }
-
-    # Suggestions shown when a rule is not satisfied.
-    suggestions_map = {
-        "length": f"Make your password at least {MIN_LENGTH} characters long.",
-        "uppercase": "Add at least one uppercase letter.",
-        "lowercase": "Add at least one lowercase letter.",
-        "number": "Add at least one number.",
-        "special": "Add a special character such as ! @ # $ % &.",
-    }
-
-    score = sum(POINTS_PER_RULE for passed in checks.values() if passed)
-
-    if score <= 40:
-        strength = "Weak"
-    elif score <= 80:
-        strength = "Medium"
-    else:
-        strength = "Strong"
-
-    missing = [labels[key] for key, passed in checks.items() if not passed]
-    suggestions = [suggestions_map[key] for key, passed in checks.items() if not passed]
-
-    if not suggestions:
-        suggestions.append("Great job! Consider using a passphrase of 16+ characters.")
-
-    return {
-        "score": score,
-        "strength": strength,
-        "checks": checks,
-        "labels": labels,
-        "missing": missing,
-        "suggestions": suggestions,
-    }
+# Environment variable support (see .env.example).
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", os.urandom(24).hex())
+app.config["JSON_SORT_KEYS"] = False
+DEBUG = os.environ.get("FLASK_DEBUG", "0") == "1"
 
 
 @app.route("/")
@@ -82,19 +42,66 @@ def home():
     return render_template("index.html")
 
 
-@app.route("/analyze", methods=["POST"])
+@app.post("/analyze")
 def analyze():
-    """Analyze a password sent as JSON: {"password": "..."}"""
-    data = request.get_json(silent=True) or {}
-    password = data.get("password", "")
+    """Analyze a password. Body: {"password": "..."}"""
+    payload = request.get_json(silent=True) or {}
+    try:
+        password = validate_password(payload.get("password"))
+    except ValueError as exc:
+        return json_error(str(exc))
 
-    if not isinstance(password, str) or password == "":
-        return jsonify({"error": "Please enter a password."}), 400
+    try:
+        return jsonify(analyze_password(password))
+    except Exception:  # pragma: no cover - defensive
+        app.logger.exception("Password analysis failed")
+        return json_error("Analysis failed. Please try again.", 500)
 
-    return jsonify(analyze_password(password))
+
+@app.post("/generate")
+def generate():
+    """
+    Generate a secure password.
+
+    Body: {"length": 16, "uppercase": true, "lowercase": true,
+           "numbers": true, "symbols": true}
+    """
+    payload = request.get_json(silent=True) or {}
+
+    try:
+        length = int(payload.get("length", 16))
+    except (TypeError, ValueError):
+        return json_error(
+            f"Length must be a number between {MIN_GENERATED_LENGTH} and {MAX_GENERATED_LENGTH}."
+        )
+
+    try:
+        password = generate_password(
+            length=length,
+            uppercase=bool(payload.get("uppercase", True)),
+            lowercase=bool(payload.get("lowercase", True)),
+            numbers=bool(payload.get("numbers", True)),
+            symbols=bool(payload.get("symbols", True)),
+        )
+    except ValueError as exc:
+        return json_error(str(exc))
+
+    # Return the analysis too so the UI can update in a single round trip.
+    return jsonify({"password": password, "analysis": analyze_password(password)})
+
+
+@app.get("/health")
+def health():
+    """Simple health check endpoint."""
+    return jsonify({"status": "ok"})
+
+
+@app.errorhandler(404)
+def not_found(_error):
+    return json_error("Not found.", 404)
 
 
 if __name__ == "__main__":
     # Render provides the PORT environment variable.
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=DEBUG)
