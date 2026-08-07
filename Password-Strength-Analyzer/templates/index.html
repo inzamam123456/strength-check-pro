@@ -3,55 +3,122 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Password Strength Analyzer</title>
+    <title>Password Strength Analyzer — Entropy, Score & Generator</title>
     <meta
       name="description"
-      content="Check how strong your password is with an instant score out of 100, a strength meter and improvement tips."
+      content="Analyze password strength with entropy in bits, estimated crack time, weak-pattern detection and a secure password generator."
     />
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
   </head>
   <body>
     <main class="wrapper">
       <section class="card">
         <header class="card-head">
           <h1>Password Strength Analyzer</h1>
-          <p>Test your password against five security rules and get an instant score.</p>
+          <p>
+            Entropy-based scoring, weak-pattern detection and crack-time estimates.
+          </p>
         </header>
 
-        <!-- Password input + show/hide toggle -->
+        <!-- Password input -->
         <div class="field">
+          <label class="sr-only" for="password">Password to analyze</label>
           <input
             type="password"
             id="password"
             placeholder="Enter your password"
             autocomplete="new-password"
+            spellcheck="false"
           />
-          <button type="button" id="toggle" class="toggle" aria-label="Show password">Show</button>
+          <button type="button" id="copy" class="icon-btn" aria-label="Copy password to clipboard">
+            Copy
+          </button>
+          <button type="button" id="toggle" class="icon-btn" aria-label="Show password" aria-pressed="false">
+            Show
+          </button>
         </div>
 
         <button type="button" id="analyze" class="btn">Analyze Password</button>
 
-        <!-- Results (hidden until analysis runs) -->
-        <div id="results" class="results hidden">
+        <!-- Generator -->
+        <button
+          type="button"
+          id="gen-toggle"
+          class="btn secondary"
+          aria-expanded="false"
+          aria-controls="generator"
+        >
+          Generate Strong Password
+        </button>
+
+        <div id="generator" class="panel hidden">
+          <div class="row">
+            <label for="length">Length</label>
+            <span id="length-value" class="muted">16</span>
+          </div>
+          <input type="range" id="length" min="8" max="32" value="16" />
+
+          <div class="options">
+            <label><input type="checkbox" id="opt-uppercase" checked /> A-Z</label>
+            <label><input type="checkbox" id="opt-lowercase" checked /> a-z</label>
+            <label><input type="checkbox" id="opt-numbers" checked /> 0-9</label>
+            <label><input type="checkbox" id="opt-symbols" checked /> !@#</label>
+          </div>
+
+          <button type="button" id="generate" class="btn small">Generate</button>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="results hidden" aria-live="polite">
           <div class="meter-row">
             <span id="strength" class="strength">Weak</span>
             <span id="score" class="score">0 / 100</span>
           </div>
-          <div class="meter">
+          <div
+            class="meter"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            id="meter"
+          >
             <div id="bar" class="bar"></div>
           </div>
 
+          <dl class="stats">
+            <div class="stat">
+              <dt>Entropy</dt>
+              <dd id="entropy">0 bits</dd>
+              <dd id="entropy-label" class="muted small">Very Weak</dd>
+            </div>
+            <div class="stat">
+              <dt>Est. crack time</dt>
+              <dd id="crack-time">instantly</dd>
+              <dd class="muted small">offline GPU attack</dd>
+            </div>
+          </dl>
+
           <ul id="checklist" class="checklist"></ul>
+
+          <div id="warnings-box" class="warnings hidden">
+            <h2>Detected weaknesses</h2>
+            <ul id="warnings"></ul>
+          </div>
 
           <div class="tips">
             <h2>Suggestions</h2>
             <ul id="suggestions"></ul>
           </div>
+
+          <button type="button" id="export" class="btn secondary">Download Security Report</button>
         </div>
 
-        <p id="error" class="error hidden"></p>
+        <p id="error" class="error hidden" role="alert"></p>
       </section>
     </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
   </body>
