@@ -1,48 +1,69 @@
 # Password Strength Analyzer
 
-A modern, responsive web app that scores a password out of 100, rates it as **Weak / Medium / Strong**, and explains exactly how to make it better. Built with Flask on the backend and plain HTML/CSS/JavaScript on the frontend.
+A production-quality password security tool. It scores a password out of 100 using **entropy, character diversity, length and weak-pattern detection**, estimates how long an offline GPU attack would take to crack it, generates cryptographically secure passwords, and exports a PDF security report.
+
+Passwords are never stored, logged, or persisted anywhere.
 
 ## Features
 
-- Dark, modern UI with smooth animations and card layout
-- Fully responsive (desktop + mobile)
-- Password input with show/hide toggle
-- Animated strength meter
-- Score out of 100 and strength label (Weak / Medium / Strong)
-- Checklist for 5 rules: minimum 8 characters, uppercase, lowercase, number, special character
-- Actionable suggestions for weak passwords
-- Clean, commented, beginner-friendly code
+- **Entropy analysis** — bits of entropy plus a qualitative rating (Very Weak / Weak / Reasonable / Strong / Very Strong)
+- **Crack-time estimation** — based on 10 billion guesses/second (offline GPU attack)
+- **Smart scoring (0–100)** — length (30) + character diversity (25) + entropy (45), minus penalties
+- **Weak-pattern detection** — common breached passwords, dictionary words (leet-aware), keyboard runs (`qwerty`, `asdf`), repeated characters, sequential characters, repeated blocks
+- **Secure generator** — `secrets` (CSPRNG) with length slider (8–32) and character-type toggles
+- **Copy to clipboard** with toast notification
+- **Animated strength meter** — red → orange → yellow → green
+- **Dynamic suggestions** — only the ones relevant to your password
+- **PDF security report** — score, strength, entropy, crack time, checklist, warnings, timestamp
+- **Accessible** — keyboard navigation, ARIA labels, live regions, visible focus states
+- **Responsive** — desktop, tablet and mobile
 
-## Scoring
+## Scoring model
 
-| Rule                 | Points |
-| -------------------- | ------ |
-| Minimum 8 characters | 20     |
-| Uppercase letter     | 20     |
-| Lowercase letter     | 20     |
-| Number               | 20     |
-| Special character    | 20     |
+| Signal              | Max points | Notes                                 |
+| ------------------- | ---------- | ------------------------------------- |
+| Length              | 30         | Saturates around 20 characters        |
+| Character diversity | 25         | Upper, lower, digits, symbols         |
+| Entropy             | 45         | Saturates at 80 bits                  |
+| Penalties           | subtracted | Common passwords, patterns, sequences |
 
 | Score  | Strength |
 | ------ | -------- |
-| 0–40   | Weak     |
-| 41–80  | Medium   |
-| 81–100 | Strong   |
+| 0–39   | Weak     |
+| 40–59  | Medium   |
+| 60–79  | Good     |
+| 80–100 | Strong   |
 
-## Project structure
+Entropy bands: `<28` Very Weak, `28–35` Weak, `36–59` Reasonable, `60–127` Strong, `128+` Very Strong.
+
+## Folder structure
 
 ```text
 Password-Strength-Analyzer/
-├── app.py
+├── app.py                 # Flask routes only — thin controller layer
+├── password_checker.py    # Requirement checks, pattern detection, scoring
+├── entropy.py             # Entropy calculation + crack-time modelling
+├── generator.py           # Cryptographically secure password generation
+├── utils.py               # Validation, JSON errors, pattern helpers
 ├── requirements.txt
-├── README.md
+├── Procfile               # gunicorn entry point (Render / Heroku)
+├── render.yaml            # Render infrastructure-as-code
+├── .env.example
 ├── .gitignore
+├── README.md
 ├── templates/
 │   └── index.html
 └── static/
     ├── style.css
     └── script.js
 ```
+
+## Technologies used
+
+- **Backend:** Python 3.12, Flask 3, Gunicorn
+- **Frontend:** HTML5, CSS3 (custom properties, grid, keyframe animations), vanilla JavaScript (Fetch API)
+- **PDF export:** jsPDF
+- **Security:** `secrets` module (CSPRNG), input validation, no password persistence
 
 ## Installation
 
@@ -51,9 +72,10 @@ git clone <your-repo-url>
 cd Password-Strength-Analyzer
 
 python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 
 pip install -r requirements.txt
+cp .env.example .env
 ```
 
 ## Running locally
@@ -62,61 +84,66 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Then open http://localhost:5000 in your browser.
+Open http://localhost:5000
 
 ## API
 
-`POST /analyze`
+| Method | Endpoint    | Description                        |
+| ------ | ----------- | ---------------------------------- |
+| GET    | `/`         | Homepage                           |
+| POST   | `/analyze`  | Analyze a password                 |
+| POST   | `/generate` | Generate a secure password         |
+| GET    | `/health`   | Health check (used by Render)      |
 
-Request:
-
-```json
-{ "password": "MyPass123!" }
-```
-
-Response:
+`POST /analyze` → `{ "password": "MyPass123!" }`
 
 ```json
 {
-  "score": 100,
-  "strength": "Strong",
+  "score": 78,
+  "strength": "Good",
+  "entropy": 65.5,
+  "entropy_label": "Strong",
+  "crack_time": "146 years",
   "checks": { "length": true, "uppercase": true, "lowercase": true, "number": true, "special": true },
   "labels": { "length": "Minimum 8 characters" },
   "missing": [],
-  "suggestions": ["Great job! Consider using a passphrase of 16+ characters."]
+  "warnings": ["This password contains the common dictionary word \"pass\"."],
+  "suggestions": ["Avoid common words; use an unrelated passphrase instead."],
+  "analyzed_at": "2026-08-07T17:00:00+00:00"
 }
 ```
 
-## Deploying on Render
+`POST /generate` → `{ "length": 16, "uppercase": true, "lowercase": true, "numbers": true, "symbols": true }`
 
-1. Push this folder to a GitHub repository.
-2. On Render, create a **New Web Service** and connect the repo.
-3. Settings:
-   - **Environment:** Python 3
-   - **Build command:** `pip install -r requirements.txt`
-   - **Start command:** `gunicorn app:app`
-4. Deploy. Render sets `PORT` automatically, which `app.py` respects.
+## Deployment (Render)
 
-## Technologies used
+**Option A — Blueprint:** push the repo and point Render at `render.yaml`.
 
-- Python 3 / Flask
-- Gunicorn (production WSGI server)
-- HTML5, CSS3 (custom properties, animations, flex/grid)
-- Vanilla JavaScript (Fetch API)
+**Option B — Manual:**
+
+1. New → Web Service → connect the repository
+2. Runtime: **Python 3**
+3. Build command: `pip install -r requirements.txt`
+4. Start command: `gunicorn app:app --workers 2 --threads 4 --timeout 60`
+5. Environment variables: `SECRET_KEY` (generate), `FLASK_DEBUG=0`
+6. Health check path: `/health`
+
+Render injects `PORT` automatically, which `app.py` respects.
 
 ## Screenshots
 
-| Home | Strong password |
-| ---- | --------------- |
-| _Add `screenshots/home.png`_ | _Add `screenshots/strong.png`_ |
+| Analysis view | Generator |
+| ------------- | --------- |
+| _Add `screenshots/analysis.png`_ | _Add `screenshots/generator.png`_ |
 
-## Future improvements
+## Future enhancements
 
-- Detect common/breached passwords (Have I Been Pwned API)
-- Entropy-based scoring and estimated crack time
-- Password generator with copy-to-clipboard
-- Light/dark theme switch
+- Have I Been Pwned k-anonymity breach lookup
+- Full zxcvbn-style dictionary and l33t scoring
 - Rate limiting and CSRF protection
+- Multi-language support
+- Password history comparison and reuse detection
+- Unit test suite with pytest and CI
 
 ## License
 
