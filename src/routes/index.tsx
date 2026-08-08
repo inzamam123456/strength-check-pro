@@ -137,7 +137,11 @@ function Index() {
       <section className="animate-rise w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)] sm:p-9">
         <header>
           <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight sm:text-3xl">
-            <Shield className="size-7 text-primary" aria-hidden="true" />
+            <img
+              src={logoAsset.url}
+              alt="Password Strength Analyzer logo"
+              className="size-9 rounded-lg"
+            />
             Password Strength Analyzer
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
