@@ -1,164 +1,84 @@
-# Password Strength Master
+# 🔐 Password Strength Analyzer
 
-Build a modern, responsive Password Strength Analyzer web application using Python (Flask) as the backend and HTML, CSS, and JavaScript as the frontend.
+A modern, privacy-focused web application that analyzes password strength and provides security recommendations based on password characteristics, entropy, and common weak patterns.
 
-Requirements:
+## 🌐 Live Demo
 
-Frontend:
+https://strength-check-pro.vercel.app
 
-- Clean, modern UI with a dark theme.
+## 📌 Overview
 
-- Responsive design for desktop and mobile.
+Password Strength Analyzer helps users understand how secure their passwords are without requiring an account.
 
-- Password input field.
+The application evaluates password characteristics such as length, character diversity, entropy, and potentially weak patterns. It then provides a security score, strength classification, recommendations, and an estimated crack time.
 
-- Show/Hide password toggle.
+The application also includes a secure password generator for creating stronger passwords.
 
-- "Analyze Password" button.
+## ✨ Features
 
-- Animated password strength meter.
+- 🔐 Password strength analysis
+- 📊 Security score out of 100
+- 📈 Entropy-based analysis
+- ⏱️ Estimated crack-time calculation
+- 🔠 Uppercase letter detection
+- 🔡 Lowercase letter detection
+- 🔢 Number detection
+- 🔣 Special character detection
+- ⚠️ Weak-pattern detection
+- 🔄 Repeated character detection
+- 🔢 Sequential pattern detection
+- 💡 Dynamic security recommendations
+- 🎲 Strong password generator
+- 📋 Copy generated password
+- 👁️ Show/hide password
+- 📱 Responsive design
+- 🛡️ Privacy-focused password analysis
+- 🌙 Modern cybersecurity-themed interface
 
-- Display password strength as:
+## 🔒 Privacy & Security
 
-  - Weak
+Password analysis is designed to take place locally in the browser.
 
-  - Medium
+> Your password stays on your device. The analyzer does not require an account or password submission to use the application.
 
-  - Strong
+The project is intended for educational and informational purposes. Password strength and crack-time estimates are approximations and should not be treated as a guarantee of security.
 
-- Display a score out of 100.
+## ⚙️ How It Works
 
-- Show a checklist indicating:
+1. Enter a password into the analyzer.
+2. The application evaluates the password's characteristics.
+3. Password length and character types are checked.
+4. Entropy and weak patterns are analyzed.
+5. A security score is calculated.
+6. The password is classified according to its strength.
+7. Suggestions are provided to improve security.
+8. Users can generate a stronger password using the password generator.
 
-  ✔ Minimum 8 characters
+## 🛠️ Technology Stack
 
-  ✔ Uppercase letter
+- **React**
+- **TypeScript**
+- **Vite**
+- **HTML5**
+- **CSS3**
+- **JavaScript / TypeScript**
+- **Git & GitHub**
+- **Vercel**
 
-  ✔ Lowercase letter
+## 📂 Project Structure
 
-  ✔ Number
-
-  ✔ Special character
-
-- Show suggestions to improve weak passwords.
-
-- Smooth animations and modern cards using CSS.
-
-Backend:
-
-- Flask application.
-
-- Route "/" serves the homepage.
-
-- POST endpoint that analyzes the password.
-
-- Validate:
-
-  - Minimum length
-
-  - Uppercase
-
-  - Lowercase
-
-  - Number
-
-  - Special character
-
-- Return:
-
-  - Score
-
-  - Strength
-
-  - Missing requirements
-
-  - Suggestions
-
-Password Scoring:
-
-- Length: 20 points
-
-- Uppercase: 20 points
-
-- Lowercase: 20 points
-
-- Number: 20 points
-
-- Special Character: 20 points
-
-Strength:
-
-0–40 = Weak
-
-41–80 = Medium
-
-81–100 = Strong
-
-Project Structure:
-
-Password-Strength-Analyzer/
-
+```text
+password-strength-master/
 │
-
-├── app.py
-
-├── requirements.txt
-
-├── README.md
-
+├── public/
+│
+├── src/
+│   ├── components/
+│   └── ...
+│
 ├── .gitignore
-
-│
-
-├── templates/
-
-│   └── index.html
-
-│
-
-├── static/
-
-│   ├── style.css
-
-│   └── script.js
-
-README should include:
-
-- Project description
-
-- Features
-
-- Installation
-
-- Running locally
-
-- Technologies used
-
-- Screenshots section
-
-- Future improvements
-
-Code should be clean, modular, and beginner-friendly with comments.
-
-The application should be production-ready and deployable on Render.
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/347eeffa-416e-4627-b850-dd658650064e).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── README.md
+└── ...
