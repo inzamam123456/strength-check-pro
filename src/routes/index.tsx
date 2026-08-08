@@ -10,7 +10,7 @@ import {
   Lightbulb,
   Loader2,
   RefreshCw,
-  Shield,
+  
   X,
 } from "lucide-react";
 import { toast } from "sonner";
