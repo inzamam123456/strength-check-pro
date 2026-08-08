@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { analyzePassword, type Analysis, type Strength } from "@/lib/password-strength";
 import { generatePassword, type GeneratorOptions } from "@/lib/password-generator";
 import { downloadSecurityReport } from "@/lib/security-report";
+import logoAsset from "@/assets/logo.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
